@@ -2,6 +2,10 @@
 name = "versuch"
 version = "0.1.0"
 authors = ["Jonas Kipfstuhl <jonas.kipfstuhl@t-online.de>"]
+license = "MIT"
+#license-file = "LICENSE"
+readme = "README.md"
+repository = "https://github.com/kipfstuhl/rust-cli"
 
 [dependencies]
 rand="0.5"
