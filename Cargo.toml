@@ -1,0 +1,7 @@
+[package]
+name = "versuch"
+version = "0.1.0"
+authors = ["Jonas Kipfstuhl <jonas.kipfstuhl@t-online.de>"]
+
+[dependencies]
+rand="0.5"
