@@ -2,25 +2,25 @@ extern crate rand;
 
 use rand::{thread_rng, Rng};
 use std::io::{self, Write};
-use std::{thread, time};
+use std::thread;
+use std::time::Duration;
 
 use std::process::Command;
 
 fn main() {
     let output = String::from("Hello, world!");
     println!("{}", output);
-    print_string_with_delay(&output, time::Duration::from_millis(100)).expect("panicking");
-    print_slice_with_delay(&output[0..5], time::Duration::from_millis(100)).expect("panicking");
-    print_string_with_random_delay(&output, time::Duration::from_millis(200), None)
-        .expect("panicking");
-    print_string_with_random_delay(&output, time::Duration::from_millis(200), Some(50))
-        .expect("panicking");
-    print_slice_with_random_delay(&output[0..5], time::Duration::from_millis(300), Some(30))
+    print_with_delay(&output, Duration::from_millis(100)).expect("panicking");
+    print_with_delay(&output[0..5], Duration::from_millis(100)).expect("panicking");
+
+    print_with_random_delay(&output, Duration::from_millis(200), None).expect("panicking");
+    print_with_random_delay(&output, Duration::from_millis(200), Some(100)).expect("panicking");
+    print_with_random_delay(&output[0..5], Duration::from_millis(300), Some(30))
         .expect("panicking");
 
     // try some color
     // does not work in Emacs shells, except term (it is ANSI
-    // compliant), so usual execution via cargo mode commands will not
+    // compliant), so usual execution via cargo-mode commands will not
     // fully work
     let cmd = Command::new("tput")
         .args(&["setaf", "4"])
@@ -56,8 +56,34 @@ fn main() {
     println!("should be normal text again");
 }
 
-pub fn print_string_with_delay(word: &String, delay: time::Duration) -> io::Result<()> {
-    for line in word.lines() {
+pub fn print_with_random_delay<T: AsRef<str>>(
+    word: T,
+    delay: Duration,
+    fraction: Option<u32>,
+) -> io::Result<()> {
+    let upper_bound = (delay.subsec_millis() * (100 + fraction.unwrap_or(10))) / 100;
+    let lower_bound = (delay.subsec_millis() * (100 - fraction.unwrap_or(10))) / 100;
+
+    let mut rng = thread_rng();
+    for line in word.as_ref().lines() {
+        for letter in line.chars() {
+            let mut string = String::new();
+            string.push(letter);
+            io::stdout().write(string.as_bytes())?;
+            io::stdout().flush()?;
+
+            let rand_delay =
+                Duration::from_millis(rng.gen_range(lower_bound as u64, upper_bound as u64));
+            thread::sleep(rand_delay);
+        }
+        io::stdout().write(b"\n")?;
+        io::stdout().flush()?;
+    }
+    Ok(())
+}
+
+pub fn print_with_delay<T: AsRef<str>>(word: T, delay: Duration) -> io::Result<()> {
+    for line in word.as_ref().lines() {
         for letter in line.chars() {
             let mut string = String::new();
             string.push(letter);
@@ -70,42 +96,4 @@ pub fn print_string_with_delay(word: &String, delay: time::Duration) -> io::Resu
     }
 
     Ok(())
-}
-
-pub fn print_slice_with_delay(word: &str, delay: time::Duration) -> io::Result<()> {
-    print_string_with_delay(&String::from(word), delay)
-}
-
-pub fn print_string_with_random_delay(
-    word: &String,
-    delay: time::Duration,
-    fraction: Option<u32>,
-) -> io::Result<()> {
-    let upper_bound = delay.subsec_millis() * (100 + fraction.unwrap_or(10)) / 100;
-    let lower_bound = delay.subsec_millis() * (100 - fraction.unwrap_or(10)) / 100;
-
-    let mut rng = thread_rng();
-    for line in word.lines() {
-        for letter in line.chars() {
-            let mut string = String::new();
-            string.push(letter);
-            io::stdout().write(string.as_bytes())?;
-            io::stdout().flush()?;
-
-            let rand_delay =
-                time::Duration::from_millis(rng.gen_range(lower_bound as u64, upper_bound as u64));
-            thread::sleep(rand_delay);
-        }
-        io::stdout().write(b"\n")?;
-        io::stdout().flush()?;
-    }
-    Ok(())
-}
-
-pub fn print_slice_with_random_delay(
-    word: &str,
-    delay: time::Duration,
-    fraction: Option<u32>,
-) -> io::Result<()> {
-    print_string_with_random_delay(&String::from(word), delay, fraction)
 }
