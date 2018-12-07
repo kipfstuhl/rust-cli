@@ -71,7 +71,6 @@ pub fn print_with_random_delay<T: AsRef<str>>(
             string.push(letter);
             io::stdout().write(string.as_bytes())?;
             io::stdout().flush()?;
-
             let rand_delay =
                 Duration::from_millis(rng.gen_range(lower_bound as u64, upper_bound as u64));
             thread::sleep(rand_delay);
