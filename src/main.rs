@@ -69,13 +69,14 @@ pub fn print_with_random_delay<T: AsRef<str>>(
         for letter in line.chars() {
             let mut string = String::new();
             string.push(letter);
-            io::stdout().write(string.as_bytes())?;
+            io::stdout().write_all(string.as_bytes())?;
             io::stdout().flush()?;
-            let rand_delay =
-                Duration::from_millis(rng.gen_range(lower_bound as u64, upper_bound as u64));
+            let rand_delay = Duration::from_millis(
+                rng.gen_range(u64::from(lower_bound), u64::from(upper_bound)),
+            );
             thread::sleep(rand_delay);
         }
-        io::stdout().write(b"\n")?;
+        io::stdout().write_all(b"\n")?;
         io::stdout().flush()?;
     }
     Ok(())
@@ -86,11 +87,11 @@ pub fn print_with_delay<T: AsRef<str>>(word: T, delay: Duration) -> io::Result<(
         for letter in line.chars() {
             let mut string = String::new();
             string.push(letter);
-            io::stdout().write(string.as_bytes())?;
+            io::stdout().write_all(string.as_bytes())?;
             io::stdout().flush()?;
             thread::sleep(delay);
         }
-        io::stdout().write(b"\n")?;
+        io::stdout().write_all(b"\n")?;
         io::stdout().flush()?;
     }
 
