@@ -10,4 +10,4 @@ edition="2018"
 
 [dependencies]
 rand="0.5"
-structopt="0.2.10"
+structopt={version="0.2.10", default-features=false}

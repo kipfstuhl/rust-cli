@@ -6,6 +6,7 @@ use structopt::StructOpt;
 use versuch::{print_with_delay, print_with_random_delay};
 
 #[derive(StructOpt)]
+#[structopt(name = "", version = "", author = "")]
 struct Cli {
     /// output color and ANSI control codes
     #[structopt(short = "c", long = "color")]
