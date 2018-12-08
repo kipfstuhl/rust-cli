@@ -1,11 +1,8 @@
-extern crate rand;
-
 use rand::{thread_rng, Rng};
 use std::io::{self, Write};
+use std::process::Command;
 use std::thread;
 use std::time::Duration;
-
-use std::process::Command;
 
 use structopt::StructOpt;
 
