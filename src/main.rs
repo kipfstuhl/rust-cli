@@ -1,10 +1,9 @@
-use rand::{thread_rng, Rng};
-use std::io::{self, Write};
 use std::process::Command;
-use std::thread;
 use std::time::Duration;
 
 use structopt::StructOpt;
+
+use versuch::{print_with_delay, print_with_random_delay};
 
 #[derive(StructOpt)]
 struct Cli {
@@ -14,31 +13,49 @@ struct Cli {
     /// Delay in milliseconds for the output of strings
     #[structopt(short = "d", long = "delay", default_value = "100")]
     delay: u64,
+    /// String to output
+    #[structopt(default_value = "Hello World!")]
+    output: String,
 }
 
 fn main() {
     let args = Cli::from_args();
-    let output = String::from("Hello, world!");
+    let output = args.output;
+    let out = &mut std::io::stdout();
     println!("{}", output);
-    println!("Now some default output, not respecting user input.");
+    println!("Now some default output, not respecting user defined delay.");
 
-    print_with_delay(&output, Duration::from_millis(100)).expect("panicking");
-    print_with_delay(&output[0..5], Duration::from_millis(100)).expect("panicking");
-
-    print_with_random_delay(&output, Duration::from_millis(200), None).expect("panicking");
-    print_with_random_delay(&output, Duration::from_millis(200), Some(100)).expect("panicking");
-    print_with_random_delay(&output[0..5], Duration::from_millis(300), Some(30))
+    print_with_delay(&output, Duration::from_millis(100), out).expect("panicking");
+    print_with_random_delay(&output, Duration::from_millis(200), None, out).expect("panicking");
+    print_with_random_delay(&output, Duration::from_millis(200), Some(100), out)
         .expect("panicking");
+
+    // does not work, do not use such characters!!
+    // print_with_random_delay(
+    //     String::from("challenging: ßäöüÄÖÜ, ðÐ œ Œ"),
+    //     Duration::from_millis(300),
+    //     Some(100),
+    //     out,
+    // )
+    // .expect("panicking");
 
     println!("Now respect the user specified delay, or use the default value.");
     let duration = Duration::from_millis(args.delay);
-    print_with_delay(&output, duration).expect("panicking");
+    print_with_delay(&output, duration, out).expect("panicking");
 
     if args.color {
         // try some color
         // does not work in Emacs shells, except term (it is ANSI
         // compliant), so usual execution via cargo-mode commands will not
         // fully work
+        //
+        // Note: this is not safe in any way to do so.  First this
+        // approach needs the command tput available, second it prints
+        // the escape codes directly to the terminal.  If you want
+        // this use a crate made for this purpose, e.g. ansi_term
+
+        println!("this may mess up in your terminal");
+
         let cmd = Command::new("tput")
             .args(&["setaf", "4"])
             .output()
@@ -72,57 +89,4 @@ fn main() {
         println!("Output: {}", reset_code);
         println!("should be normal text again");
     }
-}
-
-/// pritn a word (AsRef<str>, i.e. something that behaves like a
-/// reference to a string like object, charachter for character with a
-/// randomly changing delay between each character.
-/// The base value for the delay has to be specified.
-/// For the change of the delay a value in percent can be given.
-///
-/// All errors that occur during output are returned as is.
-pub fn print_with_random_delay<T: AsRef<str>>(
-    word: T,
-    delay: Duration,
-    fraction: Option<u32>,
-) -> io::Result<()> {
-    let upper_bound = (delay.subsec_millis() * (100 + fraction.unwrap_or(10))) / 100;
-    let lower_bound = (delay.subsec_millis() * (100 - fraction.unwrap_or(10))) / 100;
-
-    let mut rng = thread_rng();
-    for line in word.as_ref().lines() {
-        for letter in line.chars() {
-            let mut string = String::new();
-            string.push(letter);
-            io::stdout().write_all(string.as_bytes())?;
-            io::stdout().flush()?;
-            let rand_delay = Duration::from_millis(
-                rng.gen_range(u64::from(lower_bound), u64::from(upper_bound)),
-            );
-            thread::sleep(rand_delay);
-        }
-        io::stdout().write_all(b"\n")?;
-        io::stdout().flush()?;
-    }
-    Ok(())
-}
-
-/// print a string(y) word character for character with a specific delay
-/// between each charachter.
-///
-/// Errors are returned without any handling.
-pub fn print_with_delay<T: AsRef<str>>(word: T, delay: Duration) -> io::Result<()> {
-    for line in word.as_ref().lines() {
-        for letter in line.chars() {
-            let mut string = String::new();
-            string.push(letter);
-            io::stdout().write_all(string.as_bytes())?;
-            io::stdout().flush()?;
-            thread::sleep(delay);
-        }
-        io::stdout().write_all(b"\n")?;
-        io::stdout().flush()?;
-    }
-
-    Ok(())
 }
